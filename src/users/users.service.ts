@@ -16,7 +16,11 @@ export class UsersService {
   }
 
   async createUser(email: string, name: string) {
-    await this.db.insert(users).values({ email, name });
+    await this.dbClient.withTransaction(async (tx) => {
+      console.log("Creating user...");
+
+      await tx.insert(users).values({ email, name });
+    });
   }
 
   async findByEmail(email: string) {

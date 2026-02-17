@@ -11,21 +11,25 @@ import { UsersModule } from "./users/users.module";
 
 @Module({
   imports: [
-    AppConfigModule,
-    CorsConfigModule,
+    ObservabilityModule.forRoot({
+      serviceName: "users-service",
+      serviceVersion: "1.0.0",
+      enabled: true,
+    }),
+
     DatabaseModule.forRoot({
       postgres: true,
       azureSql: false,
       schema,
+      metricsProvider: {
+        provide: DATABASE_METRICS,
+        useExisting: DatabaseMetricsFacade,
+      },
     }),
-    ObservabilityModule,
+
+    AppConfigModule,
+    CorsConfigModule,
     UsersModule,
   ],
-  providers: [
-    {
-      provide: DATABASE_METRICS,
-      useExisting: DatabaseMetricsFacade,
-    },
-  ]
 })
-export class AppModule { }
+export class AppModule {}
