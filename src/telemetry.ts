@@ -1,19 +1,11 @@
-// import { NodeSDK } from "@opentelemetry/sdk-node";
-// import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
-// import { PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
-
-
-// export const sdk = new NodeSDK({
-//   serviceName: "consumer-service",
-//   metricReader: new PeriodicExportingMetricReader({
-//     exporter: new OTLPMetricExporter({
-//       url: "http://localhost:4318/v1/metrics",
-//     }),
-//   }),
-// });
-
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import { PrometheusExporter } from "@opentelemetry/exporter-prometheus";
+import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
+import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
+import { resourceFromAttributes } from "@opentelemetry/resources";
+
+const serviceName = process.env.OTEL_SERVICE_NAME || "users-service";
+const serviceVersion = process.env.OTEL_SERVICE_VERSION || "1.0.0";
 
 const prometheusExporter = new PrometheusExporter(
   { port: 9464 },
@@ -22,6 +14,17 @@ const prometheusExporter = new PrometheusExporter(
   }
 );
 
+const otlpTraceExporter = new OTLPTraceExporter({
+  url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || "http://localhost:4318/v1/traces",
+});
+
 export const sdk = new NodeSDK({
+  resource: resourceFromAttributes({
+    "service.name": serviceName,
+    "service.version": serviceVersion,
+  }),
+
   metricReader: prometheusExporter,
+  traceExporter: otlpTraceExporter,
+  instrumentations: [getNodeAutoInstrumentations()],
 });
